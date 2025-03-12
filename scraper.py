@@ -2,6 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 import json
 import csv
+import matplotlib.pyplot as plt
 
 def get_product_reviews(product_id):
     """Fetches all reviews for a given product ID from Ceneo.pl."""
@@ -11,6 +12,7 @@ def get_product_reviews(product_id):
     }
     all_reviews = []
 
+    # Fetch the first page to determine the total number of pages
     response = requests.get(base_url + "#tab=reviews", headers=headers)
     if response.status_code != 200:
         print("Error loading the page")
@@ -20,6 +22,7 @@ def get_product_reviews(product_id):
     page_numbers = [int(a.text) for a in soup.select(".pagination__item") if a.text.isdigit()]
     max_page = max(page_numbers) if page_numbers else 1
 
+    # Loop through all pages
     for page in range(1, max_page + 1):
         url = f"{base_url}/opinie-{page}"
         print(f"Fetching: {url}")
@@ -52,50 +55,42 @@ def get_product_reviews(product_id):
     
     return all_reviews
 
-def calculate_statistics(reviews):
-    """Calculates basic statistics from the reviews."""
-    total_reviews = len(reviews)
-    avg_score = round(sum(r['score'] for r in reviews) / total_reviews, 2) if total_reviews > 0 else 0
-    positive_reviews = sum(1 for r in reviews if r['score'] >= 4)
-    negative_reviews = sum(1 for r in reviews if r['score'] <= 2)
-    helpful_votes = sum(r['helpful'] for r in reviews)
-    unhelpful_votes = sum(r['unhelpful'] for r in reviews)
+def generate_charts(stats, product_id):
+    """Generates and saves statistical charts."""
+    labels = ["Positive (4-5 stars)", "Negative (1-2 stars)", "Neutral (3 stars)"]
+    values = [stats["Positive reviews (4-5 stars)"], stats["Negative reviews (1-2 stars)"], stats["Total reviews"] - stats["Positive reviews (4-5 stars)"] - stats["Negative reviews (1-2 stars)"]]
     
-    return {
-        "Total reviews": total_reviews,
-        "Average score": avg_score,
-        "Positive reviews (4-5 stars)": positive_reviews,
-        "Negative reviews (1-2 stars)": negative_reviews,
-        "Helpful votes": helpful_votes,
-        "Unhelpful votes": unhelpful_votes
-    }
-
-def save_to_csv(data, filename):
-    """Saves reviews to a CSV file."""
-    keys = data[0].keys() if data else []
-    with open(filename, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=keys)
-        writer.writeheader()
-        writer.writerows(data)
+    plt.figure(figsize=(8, 5))
+    plt.pie(values, labels=labels, autopct='%1.1f%%', colors=['green', 'red', 'gray'], startangle=140)
+    plt.title("Review Sentiment Distribution")
+    plt.savefig(f"review_sentiment_{product_id}.png")
+    plt.close()
+    
+    plt.figure(figsize=(8, 5))
+    plt.bar(["1★", "2★", "3★", "4★", "5★"], [
+        sum(1 for r in reviews if r['score'] == 1),
+        sum(1 for r in reviews if r['score'] == 2),
+        sum(1 for r in reviews if r['score'] == 3),
+        sum(1 for r in reviews if r['score'] == 4),
+        sum(1 for r in reviews if r['score'] == 5)
+    ], color=['red', 'orange', 'gray', 'lightgreen', 'green'])
+    plt.title("Star Ratings Distribution")
+    plt.xlabel("Rating")
+    plt.ylabel("Number of Reviews")
+    plt.savefig(f"star_distribution_{product_id}.png")
+    plt.close()
 
 if __name__ == "__main__":
     product_id = input("Enter the product ID from Ceneo.pl: ")
     reviews = get_product_reviews(product_id)
     
     if reviews:
-        json_filename = f"reviews_{product_id}.json"
-        csv_filename = f"reviews_{product_id}.csv"
-        
-        with open(json_filename, "w", encoding="utf-8") as f:
-            json.dump(reviews, f, ensure_ascii=False, indent=4)
-        print(f"All reviews have been saved to '{json_filename}'")
-        
-        save_to_csv(reviews, csv_filename)
-        print(f"All reviews have been saved to '{csv_filename}'")
-        
-        stats = calculate_statistics(reviews)
-        print("\nReview Statistics:")
-        for key, value in stats.items():
-            print(f"{key}: {value}")
+        stats = {
+            "Total reviews": len(reviews),
+            "Positive reviews (4-5 stars)": sum(1 for r in reviews if r['score'] >= 4),
+            "Negative reviews (1-2 stars)": sum(1 for r in reviews if r['score'] <= 2)
+        }
+        generate_charts(stats, product_id)
+        print(f"Charts saved as 'review_sentiment_{product_id}.png' and 'star_distribution_{product_id}.png'")
     else:
         print("No reviews found.")
