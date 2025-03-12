@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, send_file
 import requests
 from bs4 import BeautifulSoup
 import os
@@ -63,6 +63,20 @@ class Product:
 
 products = []
 
+def save_to_json(product):
+    filename = f"reviews_{product.product_id}.json"
+    with open(filename, "w", encoding="utf-8") as f:
+        json.dump([review.__dict__ for review in product.reviews], f, ensure_ascii=False, indent=4)
+    return filename
+
+def save_to_csv(product):
+    filename = f"reviews_{product.product_id}.csv"
+    with open(filename, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=["opinion_id", "author", "score", "content", "publish_date"])
+        writer.writeheader()
+        writer.writerows([review.__dict__ for review in product.reviews])
+    return filename
+
 @app.route("/")
 def home():
     return render_template("index.html")
@@ -87,6 +101,24 @@ def search():
         flash("Please enter a product ID.")
         return redirect(url_for("home"))
     return redirect(url_for("product_page", product_id=product_id))
+
+@app.route("/download/json/<product_id>")
+def download_json(product_id):
+    product = next((p for p in products if p.product_id == product_id), None)
+    if product:
+        filename = save_to_json(product)
+        return send_file(filename, as_attachment=True)
+    flash("Product not found.")
+    return redirect(url_for("home"))
+
+@app.route("/download/csv/<product_id>")
+def download_csv(product_id):
+    product = next((p for p in products if p.product_id == product_id), None)
+    if product:
+        filename = save_to_csv(product)
+        return send_file(filename, as_attachment=True)
+    flash("Product not found.")
+    return redirect(url_for("home"))
 
 if __name__ == "__main__":
     app.run(debug=True)
