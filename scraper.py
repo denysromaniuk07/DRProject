@@ -39,18 +39,36 @@ def get_product_reviews(product_id):
             review_data = {
                 "opinion_id": review.get("data-entry-id", ""),
                 "author": review.select_one(".user-post__author-name").text.strip() if review.select_one(".user-post__author-name") else "",
-                "score": review.select_one(".user-post__score-count").text.strip() if review.select_one(".user-post__score-count") else "",
+                "score": float(review.select_one(".user-post__score-count").text.replace(",", ".").replace("/5", "").strip()) if review.select_one(".user-post__score-count") else 0.0,
                 "content": review.select_one(".user-post__text").text.strip() if review.select_one(".user-post__text") else "",
                 "advantages": ", ".join([li.text.strip() for li in review.select(".review-feature__title--positives ~ .review-feature__item")]) if review.select(".review-feature__title--positives ~ .review-feature__item") else "",
                 "disadvantages": ", ".join([li.text.strip() for li in review.select(".review-feature__title--negatives ~ .review-feature__item")]) if review.select(".review-feature__title--negatives ~ .review-feature__item") else "",
-                "helpful": review.select_one(".vote-yes .js_product-review-vote")['data-total-vote'] if review.select_one(".vote-yes .js_product-review-vote") else "0",
-                "unhelpful": review.select_one(".vote-no .js_product-review-vote")['data-total-vote'] if review.select_one(".vote-no .js_product-review-vote") else "0",
+                "helpful": int(review.select_one(".vote-yes .js_product-review-vote")['data-total-vote']) if review.select_one(".vote-yes .js_product-review-vote") else 0,
+                "unhelpful": int(review.select_one(".vote-no .js_product-review-vote")['data-total-vote']) if review.select_one(".vote-no .js_product-review-vote") else 0,
                 "publish_date": review.select_one(".user-post__published > time:nth-of-type(1)")['datetime'] if review.select_one(".user-post__published > time:nth-of-type(1)") else "",
                 "purchase_date": review.select_one(".user-post__published > time:nth-of-type(2)")['datetime'] if review.select_one(".user-post__published > time:nth-of-type(2)") else ""
             }
             all_reviews.append(review_data)
     
     return all_reviews
+
+def calculate_statistics(reviews):
+    """Calculates basic statistics from the reviews."""
+    total_reviews = len(reviews)
+    avg_score = round(sum(r['score'] for r in reviews) / total_reviews, 2) if total_reviews > 0 else 0
+    positive_reviews = sum(1 for r in reviews if r['score'] >= 4)
+    negative_reviews = sum(1 for r in reviews if r['score'] <= 2)
+    helpful_votes = sum(r['helpful'] for r in reviews)
+    unhelpful_votes = sum(r['unhelpful'] for r in reviews)
+    
+    return {
+        "Total reviews": total_reviews,
+        "Average score": avg_score,
+        "Positive reviews (4-5 stars)": positive_reviews,
+        "Negative reviews (1-2 stars)": negative_reviews,
+        "Helpful votes": helpful_votes,
+        "Unhelpful votes": unhelpful_votes
+    }
 
 def save_to_csv(data, filename):
     """Saves reviews to a CSV file."""
@@ -74,5 +92,10 @@ if __name__ == "__main__":
         
         save_to_csv(reviews, csv_filename)
         print(f"All reviews have been saved to '{csv_filename}'")
+        
+        stats = calculate_statistics(reviews)
+        print("\nReview Statistics:")
+        for key, value in stats.items():
+            print(f"{key}: {value}")
     else:
         print("No reviews found.")
