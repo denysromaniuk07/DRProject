@@ -1,11 +1,12 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for, flash
 import requests
 from bs4 import BeautifulSoup
+import os
 import json
 import csv
-import matplotlib.pyplot as plt
 
 app = Flask(__name__)
+app.secret_key = "supersecretkey"
 
 class Opinion:
     """Represents a single product review."""
@@ -49,31 +50,43 @@ class Product:
                 break
             
             for review in reviews:
-                author_elem = review.select_one(".user-post__author-name")
-                score_elem = review.select_one(".user-post__score-count")
-                content_elem = review.select_one(".user-post__text")
-                publish_date_elem = review.select_one(".user-post__published > time:nth-of-type(1)")
-                
                 opinion = Opinion(
                     opinion_id=review.get("data-entry-id", ""),
-                    author=author_elem.text.strip() if author_elem else "Unknown",
-                    score=float(score_elem.text.replace(",", ".").replace("/5", "").strip()) if score_elem else 0.0,
-                    content=content_elem.text.strip() if content_elem else "No content",
-                    publish_date=publish_date_elem['datetime'] if publish_date_elem else "Unknown"
+                    author=review.select_one(".user-post__author-name").text.strip() if review.select_one(".user-post__author-name") else "Unknown",
+                    score=float(review.select_one(".user-post__score-count").text.replace(",", ".").replace("/5", "").strip()) if review.select_one(".user-post__score-count") else 0.0,
+                    content=review.select_one(".user-post__text").text.strip() if review.select_one(".user-post__text") else "No content",
+                    publish_date=review.select_one(".user-post__published > time:nth-of-type(1)")['datetime'] if review.select_one(".user-post__published > time:nth-of-type(1)") else "Unknown"
                 )
                 self.reviews.append(opinion)
         
         print(f"Total reviews fetched: {len(self.reviews)}")
 
-@app.route("/", methods=["GET", "POST"])
-def index():
-    product = None
-    if request.method == "POST":
-        product_id = request.form.get("product_id")
-        if product_id:
-            product = Product(product_id)
-            product.fetch_reviews()
-    return render_template("index.html", product=product)
+products = []
+
+@app.route("/")
+def home():
+    return render_template("index.html")
+
+@app.route("/products")
+def product_list():
+    return render_template("products.html", products=products)
+
+@app.route("/product/<product_id>")
+def product_page(product_id):
+    product = next((p for p in products if p.product_id == product_id), None)
+    if not product:
+        product = Product(product_id)
+        product.fetch_reviews()
+        products.append(product)
+    return render_template("product.html", product=product)
+
+@app.route("/search", methods=["POST"])
+def search():
+    product_id = request.form.get("product_id")
+    if not product_id:
+        flash("Please enter a product ID.")
+        return redirect(url_for("home"))
+    return redirect(url_for("product_page", product_id=product_id))
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Reviews</title>
+</head>
+<body>
+    <h1>Reviews for Product: {{ product.product_id }}</h1>
+
+    <nav>
+        <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/products">List of Products</a></li>
+        </ul>
+    </nav>
+
+    {% if product.reviews %}
+        <table border="1">
+            <tr>
+                <th>Author</th>
+                <th>Score</th>
+                <th>Content</th>
+                <th>Publish Date</th>
+            </tr>
+            {% for review in product.reviews %}
+            <tr>
+                <td>{{ review.author }}</td>
+                <td>{{ review.score }}</td>
+                <td>{{ review.content }}</td>
+                <td>{{ review.publish_date }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    {% else %}
+        <p>No reviews found.</p>
+    {% endif %}
+</body>
+</html>

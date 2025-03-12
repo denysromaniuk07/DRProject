@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product List</title>
+</head>
+<body>
+    <h1>Extracted Products</h1>
+    <nav>
+        <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/products">List of Products</a></li>
+        </ul>
+    </nav>
+
+    {% if products %}
+        <table border="1">
+            <tr>
+                <th>Product ID</th>
+                <th>Number of Reviews</th>
+                <th>Average Score</th>
+                <th>Actions</th>
+            </tr>
+            {% for product in products %}
+            <tr>
+                <td><a href="/product/{{ product.product_id }}">{{ product.product_id }}</a></td>
+                <td>{{ product.reviews|length }}</td>
+                <td>{{ "%.1f"|format(product.reviews|map(attribute='score')|sum / product.reviews|length if product.reviews else 0) }}</td>
+                <td>
+                    <a href="/product/{{ product.product_id }}">View</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    {% else %}
+        <p>No products found.</p>
+    {% endif %}
+</body>
+</html>

@@ -6,34 +6,34 @@
     <title>Ceneo Reviews</title>
 </head>
 <body>
-    <h1>Enter Product ID</h1>
-    <form method="post">
-        <input type="text" name="product_id" required>
+    <h1>Welcome to Ceneo Review Extractor</h1>
+
+    <nav>
+        <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/products">List of Products</a></li>
+            <li><a href="#">About the Author</a></li>
+        </ul>
+    </nav>
+
+    <h2>Extract Reviews</h2>
+    <form method="post" action="/search">
+        <input type="text" name="product_id" placeholder="Enter Product ID" required>
         <button type="submit">Get Reviews</button>
     </form>
 
-    {% if product %}
-        <h2>Reviews for Product: {{ product.product_id }}</h2>
-        {% if product.reviews %}
-            <table border="1">
-                <tr>
-                    <th>Author</th>
-                    <th>Score</th>
-                    <th>Content</th>
-                    <th>Publish Date</th>
-                </tr>
-                {% for review in product.reviews %}
-                <tr>
-                    <td>{{ review.author }}</td>
-                    <td>{{ review.score }}</td>
-                    <td>{{ review.content }}</td>
-                    <td>{{ review.publish_date }}</td>
-                </tr>
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <ul>
+                {% for message in messages %}
+                    <li style="color: red;">{{ message }}</li>
                 {% endfor %}
-            </table>
-        {% else %}
-            <p>No reviews found.</p>
+            </ul>
         {% endif %}
-    {% endif %}
+    {% endwith %}
+
+    <h3>Project Description</h3>
+    <p>This web application extracts and displays reviews for products from Ceneo.pl.</p>
+    <p>Libraries used: Flask, BeautifulSoup, Requests</p>
 </body>
 </html>
