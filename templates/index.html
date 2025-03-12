@@ -12,24 +12,28 @@
         <button type="submit">Get Reviews</button>
     </form>
 
-    {% if reviews %}
-        <h2>Reviews:</h2>
-        <table border="1">
-            <tr>
-                <th>Author</th>
-                <th>Score</th>
-                <th>Content</th>
-                <th>Publish Date</th>
-            </tr>
-            {% for review in reviews %}
-            <tr>
-                <td>{{ review.author }}</td>
-                <td>{{ review.score }}</td>
-                <td>{{ review.content }}</td>
-                <td>{{ review.publish_date }}</td>
-            </tr>
-            {% endfor %}
-        </table>
+    {% if product %}
+        <h2>Reviews for Product: {{ product.product_id }}</h2>
+        {% if product.reviews %}
+            <table border="1">
+                <tr>
+                    <th>Author</th>
+                    <th>Score</th>
+                    <th>Content</th>
+                    <th>Publish Date</th>
+                </tr>
+                {% for review in product.reviews %}
+                <tr>
+                    <td>{{ review.author }}</td>
+                    <td>{{ review.score }}</td>
+                    <td>{{ review.content }}</td>
+                    <td>{{ review.publish_date }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        {% else %}
+            <p>No reviews found.</p>
+        {% endif %}
     {% endif %}
 </body>
 </html>
