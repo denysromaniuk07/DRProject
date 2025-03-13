@@ -3,37 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ceneo Reviews</title>
+    <title>Home - Ceneo Scraper</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body>
-    <h1>Welcome to Ceneo Review Extractor</h1>
+<body class="container mt-4">
+    <h1 class="text-center">Welcome to Ceneo Review Extractor</h1>
 
-    <nav>
-        <ul>
-            <li><a href="/">Home</a></li>
-            <li><a href="/products">List of Products</a></li>
-            <li><a href="#">About the Author</a></li>
-        </ul>
+    <nav class="nav justify-content-center mb-4">
+        <a class="nav-link" href="/">Home</a>
+        <a class="nav-link" href="/extract">Extraction of opinions</a>
+        <a class="nav-link" href="/products">List of Products</a>
+        <a class="nav-link" href="#">About the Author</a>
     </nav>
 
-    <h2>Extract Reviews</h2>
-    <form method="post" action="/search">
-        <input type="text" name="product_id" placeholder="Enter Product ID" required>
-        <button type="submit">Get Reviews</button>
-    </form>
+    <div class="card">
+        <div class="card-body">
+            <h3 class="card-title">Project Description</h3>
+            <p><strong>Purpose of the application:</strong> Extract and analyze product reviews from Ceneo.pl.</p>
+            <p><strong>Description of the application's operation:</strong> The user enters a product ID, and the system retrieves all available reviews, generates statistics, and allows exporting data.</p>
+            <p><strong>Libraries used:</strong> Flask, BeautifulSoup, Requests, Matplotlib, Pandas.</p>
+            <p><strong>Applied approaches:</strong> Object-Oriented Programming (OOP), Web Scraping, Data Visualization.</p>
+        </div>
+    </div>
 
-    {% with messages = get_flashed_messages() %}
-        {% if messages %}
-            <ul>
-                {% for message in messages %}
-                    <li style="color: red;">{{ message }}</li>
-                {% endfor %}
-            </ul>
-        {% endif %}
-    {% endwith %}
-
-    <h3>Project Description</h3>
-    <p>This web application extracts and displays reviews for products from Ceneo.pl.</p>
-    <p>Libraries used: Flask, BeautifulSoup, Requests</p>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

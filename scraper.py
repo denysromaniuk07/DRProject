@@ -5,6 +5,7 @@ import os
 import json
 import csv
 import pandas as pd
+import matplotlib.pyplot as plt
 
 app = Flask(__name__)
 app.secret_key = "supersecretkey"
@@ -29,7 +30,7 @@ class Product:
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36"
         }
-        response = requests.get(base_url + "#tab=reviews", headers=headers)
+        response = requests.get(base_url + "#tab=reviews", headers=headers, timeout=10)
         if response.status_code != 200:
             print("Error: Unable to fetch reviews")
             return
@@ -41,7 +42,7 @@ class Product:
         for page in range(1, max_page + 1):
             url = f"{base_url}/opinie-{page}"
             print(f"Fetching: {url}")
-            response = requests.get(url, headers=headers)
+            response = requests.get(url, headers=headers, timeout=10)
             if response.status_code != 200:
                 break
             
@@ -62,27 +63,36 @@ class Product:
         
         print(f"Total reviews fetched: {len(self.reviews)}")
 
+    def generate_charts(self):
+        """Generates pie and bar charts for product reviews."""
+        if not self.reviews:
+            return
+        
+        scores = [review.score for review in self.reviews]
+        score_counts = {i: scores.count(i) for i in range(1, 6)}
+        
+        # Переконуємось, що папка `static/` існує
+        os.makedirs("static", exist_ok=True)
+
+        # Pie Chart
+        labels = ["1★", "2★", "3★", "4★", "5★"]
+        values = [score_counts.get(i, 0) for i in range(1, 6)]
+        plt.figure(figsize=(6, 6))
+        plt.pie(values, labels=labels, autopct='%1.1f%%', colors=['red', 'orange', 'gray', 'lightgreen', 'green'], startangle=140)
+        plt.title("Review Score Distribution")
+        plt.savefig(f"static/review_pie_{self.product_id}.png")
+        plt.close()
+        
+        # Bar Chart
+        plt.figure(figsize=(8, 5))
+        plt.bar(labels, values, color=['red', 'orange', 'gray', 'lightgreen', 'green'])
+        plt.xlabel("Stars")
+        plt.ylabel("Number of Reviews")
+        plt.title("Review Count by Star Rating")
+        plt.savefig(f"static/review_bar_{self.product_id}.png")
+        plt.close()
+
 products = []
-
-def save_to_json(product):
-    filename = f"reviews_{product.product_id}.json"
-    with open(filename, "w", encoding="utf-8") as f:
-        json.dump([review.__dict__ for review in product.reviews], f, ensure_ascii=False, indent=4)
-    return filename
-
-def save_to_csv(product):
-    filename = f"reviews_{product.product_id}.csv"
-    with open(filename, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=["opinion_id", "author", "score", "content", "publish_date"])
-        writer.writeheader()
-        writer.writerows([review.__dict__ for review in product.reviews])
-    return filename
-
-def save_to_xlsx(product):
-    filename = f"reviews_{product.product_id}.xlsx"
-    df = pd.DataFrame([review.__dict__ for review in product.reviews])
-    df.to_excel(filename, index=False)
-    return filename
 
 @app.route("/")
 def home():
@@ -91,6 +101,17 @@ def home():
 @app.route("/products")
 def product_list():
     return render_template("products.html", products=products)
+
+@app.route("/extract", methods=["GET", "POST"])
+def extract():
+    if request.method == "POST":
+        product_id = request.form.get("product_id")
+        if not product_id:
+            flash("Please enter a valid product ID.", "danger")
+            return redirect(url_for("extract"))
+        return redirect(url_for("product_page", product_id=product_id))
+    return render_template("extract.html")
+
 
 @app.route("/product/<product_id>")
 def product_page(product_id):
@@ -101,38 +122,12 @@ def product_page(product_id):
         products.append(product)
     return render_template("product.html", product=product)
 
-@app.route("/search", methods=["POST"])
-def search():
-    product_id = request.form.get("product_id")
-    if not product_id:
-        flash("Please enter a product ID.")
-        return redirect(url_for("home"))
-    return redirect(url_for("product_page", product_id=product_id))
-
-@app.route("/download/json/<product_id>")
-def download_json(product_id):
+@app.route("/product/<product_id>/charts")
+def product_charts(product_id):
     product = next((p for p in products if p.product_id == product_id), None)
     if product:
-        filename = save_to_json(product)
-        return send_file(filename, as_attachment=True)
-    flash("Product not found.")
-    return redirect(url_for("home"))
-
-@app.route("/download/csv/<product_id>")
-def download_csv(product_id):
-    product = next((p for p in products if p.product_id == product_id), None)
-    if product:
-        filename = save_to_csv(product)
-        return send_file(filename, as_attachment=True)
-    flash("Product not found.")
-    return redirect(url_for("home"))
-
-@app.route("/download/xlsx/<product_id>")
-def download_xlsx(product_id):
-    product = next((p for p in products if p.product_id == product_id), None)
-    if product:
-        filename = save_to_xlsx(product)
-        return send_file(filename, as_attachment=True)
+        product.generate_charts()
+        return render_template("charts.html", product=product)
     flash("Product not found.")
     return redirect(url_for("home"))
 

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extract Product - Ceneo Scraper</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="container mt-4">
+    <h1 class="text-center">Extract Product Reviews</h1>
+
+    <nav class="nav justify-content-center mb-4">
+        <a class="nav-link" href="/">Home</a>
+        <a class="nav-link" href="/extract">Extraction of opinions</a>
+        <a class="nav-link" href="/products">List of Products</a>
+        <a class="nav-link" href="#">About the Author</a>
+    </nav>
+
+    <div class="text-center">
+        <h2>Enter Product ID</h2>
+        <form method="post" action="/extract" class="d-inline-block">
+            <input type="text" name="product_id" placeholder="Enter Product ID" required class="form-control mb-2">
+            <button type="submit" class="btn btn-primary">Get Reviews</button>
+        </form>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="alert alert-danger mt-3">
+                    {% for message in messages %}
+                        <p>{{ message }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
