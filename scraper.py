@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 import os
 import json
 import csv
+import pandas as pd
 
 app = Flask(__name__)
 app.secret_key = "supersecretkey"
@@ -77,6 +78,12 @@ def save_to_csv(product):
         writer.writerows([review.__dict__ for review in product.reviews])
     return filename
 
+def save_to_xlsx(product):
+    filename = f"reviews_{product.product_id}.xlsx"
+    df = pd.DataFrame([review.__dict__ for review in product.reviews])
+    df.to_excel(filename, index=False)
+    return filename
+
 @app.route("/")
 def home():
     return render_template("index.html")
@@ -116,6 +123,15 @@ def download_csv(product_id):
     product = next((p for p in products if p.product_id == product_id), None)
     if product:
         filename = save_to_csv(product)
+        return send_file(filename, as_attachment=True)
+    flash("Product not found.")
+    return redirect(url_for("home"))
+
+@app.route("/download/xlsx/<product_id>")
+def download_xlsx(product_id):
+    product = next((p for p in products if p.product_id == product_id), None)
+    if product:
+        filename = save_to_xlsx(product)
         return send_file(filename, as_attachment=True)
     flash("Product not found.")
     return redirect(url_for("home"))
