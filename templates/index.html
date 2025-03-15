@@ -9,14 +9,9 @@
 <body class="container mt-4">
     <h1 class="text-center">Welcome to Ceneo Review Extractor</h1>
 
-    <nav class="nav justify-content-center mb-4">
-        <a class="nav-link" href="/">Home</a>
-        <a class="nav-link" href="/extract">Extraction of opinions</a>
-        <a class="nav-link" href="/products">List of Products</a>
-        <a class="nav-link" href="#">About the Author</a>
-    </nav>
+    {% include 'menu.html' %}
 
-    <div class="card">
+    <div class="card mt-4">
         <div class="card-body">
             <h3 class="card-title">Project Description</h3>
             <p><strong>Purpose of the application:</strong> Extract and analyze product reviews from Ceneo.pl.</p>

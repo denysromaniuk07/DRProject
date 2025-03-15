@@ -9,14 +9,9 @@
 <body class="container mt-4">
     <h1 class="text-center">Extract Product Reviews</h1>
 
-    <nav class="nav justify-content-center mb-4">
-        <a class="nav-link" href="/">Home</a>
-        <a class="nav-link" href="/extract">Extraction of opinions</a>
-        <a class="nav-link" href="/products">List of Products</a>
-        <a class="nav-link" href="#">About the Author</a>
-    </nav>
+    {% include 'menu.html' %}
 
-    <div class="text-center">
+    <div class="text-center mt-4">
         <h2>Enter Product ID</h2>
         <form method="post" action="/extract" class="d-inline-block">
             <input type="text" name="product_id" placeholder="Enter Product ID" required class="form-control mb-2">

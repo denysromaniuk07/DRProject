@@ -17,11 +17,7 @@
 <body class="container mt-4">
     <h1 class="text-center">Reviews for Product: {{ product.product_id }}</h1>
 
-    <nav class="nav justify-content-center mb-4">
-        <a class="nav-link" href="/">Home</a>
-        <a class="nav-link" href="/products">List of Products</a>
-        <a class="nav-link" href="#">About the Author</a>
-    </nav>
+    {% include 'menu.html' %}
 
     <div class="row mb-4 text-center">
         <h2>Download Reviews</h2>
@@ -45,19 +41,53 @@
             <table id="reviewsTable" class="table table-striped table-bordered">
                 <thead class="table-dark">
                     <tr>
+                        <th>ID</th>
                         <th>Author</th>
+                        <th>Recommendation</th>
                         <th>Score</th>
                         <th>Content</th>
+                        <th>Pros</th>
+                        <th>Cons</th>
+                        <th>Helpful</th>
+                        <th>Unhelpful</th>
                         <th>Publish Date</th>
+                        <th>Purchase Date</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for review in product.reviews %}
                     <tr>
+                        <td>{{ review.opinion_id }}</td>
                         <td>{{ review.author }}</td>
-                        <td>{{ review.score }}</td>
+                        <td>{{ review.recommendation }}</td>
+                        <td>{{ review.score }} ★</td>
                         <td>{{ review.content }}</td>
+                        <td>
+                            {% if review.pros %}
+                                <ul>
+                                    {% for pro in review.pros %}
+                                        <li>{{ pro }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% else %}
+                                No pros listed
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if review.cons %}
+                                <ul>
+                                    {% for con in review.cons %}
+                                        <li>{{ con }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% else %}
+                                No cons listed
+                            {% endif %}
+                        </td>
+                        <td>{{ review.helpful }}</td>
+                        <td>{{ review.unhelpful }}</td>
                         <td>{{ review.publish_date }}</td>
+                        <td>{{ review.purchase_date }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
