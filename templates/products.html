@@ -16,20 +16,32 @@
             <thead class="table-dark">
                 <tr>
                     <th>Product ID</th>
+                    <th>Product Name</th>
                     <th>Number of Opinions</th>
                     <th>Advantages Count</th>
                     <th>Disadvantages Count</th>
                     <th>Average Score</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for product in products %}
                 <tr>
-                    <td><a href="/product/{{ product.product_id }}">{{ product.product_id }}</a></td>
-                    <td>{{ product.reviews|length }}</td>
+                    <td>{{ product.product_id }}</td>
+                    <td>
+                        <a href="/product/{{ product.product_id }}">
+                            {{ product.name if product.name else "Unknown Product" }}
+                        </a>
+                    </td>
+                    <td>{{ product.number_of_opinions() }}</td>
                     <td>{{ product.advantages_count() }}</td>
                     <td>{{ product.disadvantages_count() }}</td>
                     <td>{{ "%.1f"|format(product.average_score()) }}</td>
+                    <td>
+                        <a href="{{ url_for('download_file', filetype='json', product_id=product.product_id) }}" class="btn btn-primary btn-sm">JSON</a>
+                        <a href="{{ url_for('download_file', filetype='csv', product_id=product.product_id) }}" class="btn btn-success btn-sm">CSV</a>
+                        <a href="{{ url_for('download_file', filetype='xlsx', product_id=product.product_id) }}" class="btn btn-warning btn-sm">XLSX</a>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
