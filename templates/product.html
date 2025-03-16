@@ -10,12 +10,26 @@
     <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
     <script>
         $(document).ready(function() {
-            $('#reviewsTable').DataTable();
+            var table = $('#reviewsTable').DataTable();
+
+            $('#filter-score, #filter-recommendation, #filter-pros, #filter-cons').on('change', function() {
+                var score = $('#filter-score').val();
+                var recommendation = $('#filter-recommendation').val();
+                var pros = $('#filter-pros').val();
+                var cons = $('#filter-cons').val();
+
+                table.column(3).search(score ? "^" + score + " ★$" : "", true, false);
+                table.column(2).search(recommendation ? recommendation : "");
+                table.column(5).search(pros === "yes" ? "^(?!None).+" : pros === "no" ? "^None$" : "", true, false);
+                table.column(6).search(cons === "yes" ? "^(?!None).+" : cons === "no" ? "^None$" : "", true, false);
+
+                table.draw();
+            });
         });
     </script>
 </head>
 <body class="container mt-4">
-    <h1 class="text-center">Reviews for Product: {{ product.product_id }}</h1>
+    <h1 class="text-center">Reviews for Product: {{ product.name }}</h1>
 
     {% include 'menu.html' %}
 
@@ -35,67 +49,39 @@
         </div>
     </div>
 
-    {% if product.reviews %}
-        <h2 class="text-center">Product Reviews</h2>
-        <div class="table-responsive">
-            <table id="reviewsTable" class="table table-striped table-bordered">
-                <thead class="table-dark">
-                    <tr>
-                        <th>ID</th>
-                        <th>Author</th>
-                        <th>Recommendation</th>
-                        <th>Score</th>
-                        <th>Content</th>
-                        <th>Pros</th>
-                        <th>Cons</th>
-                        <th>Helpful</th>
-                        <th>Unhelpful</th>
-                        <th>Publish Date</th>
-                        <th>Purchase Date</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for review in product.reviews %}
-                    <tr>
-                        <td>{{ review.opinion_id }}</td>
-                        <td>{{ review.author }}</td>
-                        <td>{{ review.recommendation }}</td>
-                        <td>{{ review.score }} ★</td>
-                        <td>{{ review.content }}</td>
-                        <td>
-                            {% if review.pros %}
-                                <ul>
-                                    {% for pro in review.pros %}
-                                        <li>{{ pro }}</li>
-                                    {% endfor %}
-                                </ul>
-                            {% else %}
-                                No pros listed
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if review.cons %}
-                                <ul>
-                                    {% for con in review.cons %}
-                                        <li>{{ con }}</li>
-                                    {% endfor %}
-                                </ul>
-                            {% else %}
-                                No cons listed
-                            {% endif %}
-                        </td>
-                        <td>{{ review.helpful }}</td>
-                        <td>{{ review.unhelpful }}</td>
-                        <td>{{ review.publish_date }}</td>
-                        <td>{{ review.purchase_date }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    {% else %}
-        <p class="text-center text-danger">No reviews found.</p>
-    {% endif %}
+
+    <div class="table-responsive">
+        <table id="reviewsTable" class="table table-striped table-bordered">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Author</th>
+                    <th>Recommendation</th>
+                    <th>Score</th>
+                    <th>Content</th>
+                    <th>Pros</th>
+                    <th>Cons</th>
+                    <th>Publish Date</th>
+                    <th>Purchase Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for review in product.reviews %}
+                <tr>
+                    <td>{{ review.opinion_id }}</td>
+                    <td>{{ review.author }}</td>
+                    <td>{{ review.recommendation if review.recommendation else '' }}</td>
+                    <td>{{ review.score }} ★</td>
+                    <td>{{ review.content }}</td>
+                    <td>{{ review.pros if review.pros != 'None' else '' }}</td>
+                    <td>{{ review.cons if review.cons != 'None' else '' }}</td>
+                    <td>{{ review.publish_date }}</td>
+                    <td>{{ review.purchase_date }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>

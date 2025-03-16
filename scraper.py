@@ -7,7 +7,6 @@ from flask import Flask, render_template, request, redirect, url_for, flash, sen
 from bs4 import BeautifulSoup
 
 app = Flask(__name__)
-app.secret_key = "supersecretkey"
 
 PRODUCTS_FILE = "products.json"
 
@@ -30,9 +29,10 @@ class Opinion:
     def to_dict(self):
         """Convert object to dictionary for JSON storage."""
         return self.__dict__
+    
+
 
 class Product:
-    """Represents a product with its reviews."""
     """Represents a product with its reviews."""
     def __init__(self, product_id, name=None, reviews=None):
         self.product_id = product_id
@@ -42,14 +42,6 @@ class Product:
     def number_of_opinions(self):
         """Returns the total number of opinions."""
         return len(self.reviews)
-
-    def advantages_count(self):
-        """Returns the number of reviews that contain advantages."""
-        return sum(1 for review in self.reviews if review.pros)
-
-    def disadvantages_count(self):
-        """Returns the number of reviews that contain disadvantages."""
-        return sum(1 for review in self.reviews if review.cons)
 
     def fetch_reviews(self):
         """Fetches reviews from Ceneo.pl"""
@@ -62,15 +54,11 @@ class Product:
         
         soup = BeautifulSoup(response.text, "html.parser")
 
-        # Отримуємо назву товару
         product_name_tag = soup.select_one("h1.product-top__product-info__name, h1.long-name")
         self.name = product_name_tag.text.strip() if product_name_tag else "Unknown Product"
 
         page_numbers = [int(a.text) for a in soup.select(".pagination__item") if a.text.isdigit()]
         max_page = max(page_numbers) if page_numbers else 1
-
-        if not self.name or self.name == "Unknown Product":
-            self.name = product_name_tag.text.strip() if product_name_tag else self.name
 
         for page in range(1, max_page + 1):
             url = f"{base_url}/opinie-{page}"
@@ -84,19 +72,29 @@ class Product:
                 break
             
             for review in reviews:
+
                 opinion = Opinion(
                     opinion_id=review.get("data-entry-id", ""),
                     author=review.select_one(".user-post__author-name").text.strip() if review.select_one(".user-post__author-name") else "Unknown",
                     recommendation=review.select_one(".user-post__author-recommendation > em").text.strip() if review.select_one(".user-post__author-recommendation > em") else "",
                     score=float(review.select_one(".user-post__score-count").text.replace(",", ".").replace("/5", "").strip()) if review.select_one(".user-post__score-count") else 0.0,
                     content=review.select_one(".user-post__text").text.strip() if review.select_one(".user-post__text") else "No content",
-                    pros=[li.text.strip() for li in review.select(".review-feature__title--positives ~ .review-feature__item")],
-                    cons=[li.text.strip() for li in review.select(".review-feature__title--negatives ~ .review-feature__item")],
+                    pros=", ".join([item.text.strip() for item in review.find_all("div", class_="review-feature__item") 
+                                    if item.find_previous_sibling("div", class_="review-feature__title") 
+                                    and "Zalety" in item.find_previous_sibling("div", class_="review-feature__title").text]) or "None",
+
+                    cons=", ".join([item.text.strip() for item in review.find_all("div", class_="review-feature__item") 
+                                    if item.find_previous_sibling("div", class_="review-feature__title") 
+                                    and "Wady" in item.find_previous_sibling("div", class_="review-feature__title").text]) or "None",
+
+
                     helpful=int(review.select_one(".vote-yes .js_product-review-vote").text.strip() if review.select_one(".vote-yes .js_product-review-vote") else "0"),
                     unhelpful=int(review.select_one(".vote-no .js_product-review-vote").text.strip() if review.select_one(".vote-no .js_product-review-vote") else "0"),
                     publish_date=review.select_one(".user-post__published > time:nth-of-type(1)")["datetime"] if review.select_one(".user-post__published > time:nth-of-type(1)") else "",
                     purchase_date=review.select_one(".user-post__published > time:nth-of-type(2)")["datetime"] if review.select_one(".user-post__published > time:nth-of-type(2)") else ""
+
                 )
+                
                 self.reviews.append(opinion)
         
         print(f"Total reviews fetched: {len(self.reviews)}")
@@ -115,6 +113,8 @@ class Product:
         if not self.reviews:
             return 0
         return round(sum(review.score for review in self.reviews) / len(self.reviews), 1)
+    
+    
 
 def generate_charts(product):
     """Generates pie and bar charts for product reviews."""
@@ -132,7 +132,6 @@ def generate_charts(product):
     plt.savefig(f"static/review_pie_{product.product_id}.png")
     plt.close()
 
-    # Bar Chart
     plt.figure(figsize=(8, 5))
     plt.bar(labels, values, color=['red', 'orange', 'gray', 'lightgreen', 'green'])
     plt.xlabel("Stars")
@@ -177,14 +176,36 @@ def download_file(filetype, product_id):
 def save_products():
     """Saves products to a JSON file."""
     with open(PRODUCTS_FILE, "w", encoding="utf-8") as f:
-        json.dump([{"product_id": product.product_id, "reviews": [review.to_dict() for review in product.reviews]} for product in products], f, indent=4)
+        json.dump([{
+            "product_id": product.product_id,
+            "name": product.name,  
+            "reviews": [review.to_dict() for review in product.reviews]
+        } for product in products], f, indent=4, ensure_ascii=False)
 
 def load_products():
     """Loads products from a JSON file."""
     if os.path.exists(PRODUCTS_FILE):
         with open(PRODUCTS_FILE, "r", encoding="utf-8") as f:
             data = json.load(f)
-            return [Product(p["product_id"], [Opinion(**r) for r in p["reviews"]]) for p in data]
+            return [
+                Product(
+                    p["product_id"], 
+                    p.get("name", "Unknown Product"), 
+                    [Opinion(
+                        opinion_id=r["opinion_id"],
+                        author=r["author"],
+                        recommendation=r["recommendation"],
+                        score=r["score"],
+                        content=r["content"],
+                        pros=r["pros"],  # Зберігаємо pros як рядок
+                        cons=r["cons"],  # Зберігаємо cons як рядок
+                        helpful=r["helpful"],
+                        unhelpful=r["unhelpful"],
+                        publish_date=r["publish_date"],
+                        purchase_date=r["purchase_date"]
+                    ) for r in p["reviews"]]
+                ) for p in data
+            ]
     return []
 
 products = load_products()
@@ -217,6 +238,11 @@ def product_page(product_id):
         products.append(product)
         save_products()
     return render_template("product.html", product=product)
+
+@app.route("/about")
+def about():
+    return render_template("about.html")
+
 
 if __name__ == "__main__":
     app.run(debug=True)
