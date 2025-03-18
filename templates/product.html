@@ -12,33 +12,26 @@
         $(document).ready(function() {
             var table = $('#reviewsTable').DataTable({
                 "paging": true,
-                "pageLength": 15,
-                "lengthMenu": [5, 10, 15, 20, 25, 50, 100],
-                "searching": false // Disable the global search
+                "pageLength": 10,
+                "lengthMenu": [5, 10, 15, 20, 50],
+                "searching": true, 
+                "order": [], 
             });
-
-            // Filter functionality for each column
-            $('#filter-author').on('keyup change', function() {
-                table.column(1).search(this.value).draw();
+            $('#reviewsTable thead').append('<tr class="filters"></tr>');
+            $('#reviewsTable thead tr:eq(0) th').each(function(i) {
+                var title = $(this).text();
+                $('.filters').append('<th><input type="text" class="form-control form-control-sm filter-input" placeholder="Filter..."></th>');
             });
-
-            $('#filter-recommendation').on('change', function() {
-                table.column(2).search(this.value).draw();
+    
+            $('.filter-input').on('keyup change', function() {
+                var colIndex = $(this).parent().index();
+                table.column(colIndex).search(this.value).draw();
             });
-
-            $('#filter-score').on('change', function() {
-                table.column(3).search(this.value ? "^" + this.value + " ★$" : "", true, false).draw();
-            });
-
-            $('#filter-pros').on('change', function() {
-                table.column(5).search(this.value === "yes" ? "^(?!None).+" : this.value === "no" ? "^None$" : "", true, false).draw();
-            });
-
-            $('#filter-cons').on('change', function() {
-                table.column(6).search(this.value === "yes" ? "^(?!None).+" : this.value === "no" ? "^None$" : "", true, false).draw();
-            });
+    
+            $('#reviewsTable thead tr:eq(1) th').removeClass('sorting sorting_asc sorting_desc').off('click');
         });
     </script>
+    
 </head>
 <body class="container mt-4">
     <h1 class="text-center">Reviews for Product: {{ product.name }}</h1>
@@ -66,41 +59,12 @@
             <thead class="table-dark">
                 <tr>
                     <th>ID</th>
-                    <th>Author
-                        <input type="text" id="filter-author" class="form-control form-control-sm" placeholder="Filter by author">
-                    </th>
-                    <th>Recommendation
-                        <select id="filter-recommendation" class="form-control form-control-sm">
-                            <option value="">All</option>
-                            <option value="Polecam">Recommend</option>
-                            <option value="Nie polecam">Do not recommend</option>
-                        </select>
-                    </th>
-                    <th>Score
-                        <select id="filter-score" class="form-control form-control-sm">
-                            <option value="">All</option>
-                            <option value="1">1★</option>
-                            <option value="2">2★</option>
-                            <option value="3">3★</option>
-                            <option value="4">4★</option>
-                            <option value="5">5★</option>
-                        </select>
-                    </th>
+                    <th>Author</th>
+                    <th>Recommendation</th>
+                    <th>Score</th>
                     <th>Content</th>
-                    <th>Pros
-                        <select id="filter-pros" class="form-control form-control-sm">
-                            <option value="">All</option>
-                            <option value="yes">With Pros</option>
-                            <option value="no">No Pros</option>
-                        </select>
-                    </th>
-                    <th>Cons
-                        <select id="filter-cons" class="form-control form-control-sm">
-                            <option value="">All</option>
-                            <option value="yes">With Cons</option>
-                            <option value="no">No Cons</option>
-                        </select>
-                    </th>
+                    <th>Pros</th>
+                    <th>Cons</th>
                     <th>Publish Date</th>
                     <th>Purchase Date</th>
                 </tr>
@@ -111,7 +75,7 @@
                     <td>{{ review.opinion_id }}</td>
                     <td>{{ review.author }}</td>
                     <td>{{ review.recommendation if review.recommendation else '' }}</td>
-                    <td>{{ review.score }} ★</td>
+                    <td>{{ review.score }} </td>
                     <td>{{ review.content }}</td>
                     <td>{{ review.pros if review.pros != 'None' else '' }}</td>
                     <td>{{ review.cons if review.cons != 'None' else '' }}</td>

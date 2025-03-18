@@ -1,14 +1,5 @@
-import os
-import json
 import requests
-import pandas as pd
-import matplotlib.pyplot as plt
-from flask import Flask, render_template, request, redirect, url_for, flash, send_file
 from bs4 import BeautifulSoup
-
-app = Flask(__name__)
-
-PRODUCTS_FILE = "products.json"
 
 
 class Opinion:
@@ -44,6 +35,8 @@ class Product:
         return len(self.reviews)
 
     def fetch_reviews(self):
+        from utils import save_products
+        from routes import products
         """Fetches reviews from Ceneo.pl"""
         base_url = f"https://www.ceneo.pl/{self.product_id}"
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36"}
@@ -100,7 +93,7 @@ class Product:
                 self.reviews.append(opinion)
         
         print(f"Total reviews fetched: {len(self.reviews)}")
-        save_products()
+        save_products(products)
 
     def advantages_count(self):
         """Returns the number of reviews that mention advantages (pros)."""
@@ -115,136 +108,3 @@ class Product:
         if not self.reviews:
             return 0
         return round(sum(review.score for review in self.reviews) / len(self.reviews), 1)
-    
-    
-
-def generate_charts(product):
-    """Generates pie and bar charts for product reviews."""
-    if not os.path.exists("static"):
-        os.makedirs("static")
-
-    scores = [review.score for review in product.reviews]
-    score_counts = {i: scores.count(i) for i in range(1, 6)}
-
-    labels = ["1★", "2★", "3★", "4★", "5★"]
-    values = [score_counts.get(i, 0) for i in range(1, 6)]
-    plt.figure(figsize=(6, 6))
-    plt.pie(values, labels=labels, autopct='%1.1f%%', colors=['red', 'orange', 'gray', 'lightgreen', 'green'], startangle=140)
-    plt.title("Review Score Distribution")
-    plt.savefig(f"static/review_pie_{product.product_id}.png")
-    plt.close()
-
-    plt.figure(figsize=(8, 5))
-    plt.bar(labels, values, color=['red', 'orange', 'gray', 'lightgreen', 'green'])
-    plt.xlabel("Stars")
-    plt.ylabel("Number of Reviews")
-    plt.title("Review Count by Star Rating")
-    plt.savefig(f"static/review_bar_{product.product_id}.png")
-    plt.close()
-
-@app.route("/product/<product_id>/charts")
-def product_charts(product_id):
-    """Route to generate and display product charts."""
-    product = next((p for p in products if p.product_id == product_id), None)
-    if not product:
-        return "Product not found", 404
-
-    generate_charts(product)
-    return render_template("charts.html", product=product)
-
-
-@app.route("/download/<filetype>/<product_id>")
-def download_file(filetype, product_id):
-    """Downloads JSON, CSV, or XLSX file with product reviews."""
-    product = next((p for p in products if p.product_id == product_id), None)
-    if not product:
-        return "Product not found", 404
-
-    filename = f"reviews_{product_id}.{filetype}"
-    df = pd.DataFrame([review.to_dict() for review in product.reviews])
-
-    if filetype == "json":
-        df.to_json(filename, orient="records", indent=4, force_ascii=False)
-    elif filetype == "csv":
-        df.to_csv(filename, index=False)
-    elif filetype == "xlsx":
-        df.to_excel(filename, index=False)
-    else:
-        return "Invalid file type", 400
-
-    return send_file(filename, as_attachment=True)
-
-
-def save_products():
-    """Saves products to a JSON file."""
-    with open(PRODUCTS_FILE, "w", encoding="utf-8") as f:
-        json.dump([{
-            "product_id": product.product_id,
-            "name": product.name,  
-            "reviews": [review.to_dict() for review in product.reviews]
-        } for product in products], f, indent=4, ensure_ascii=False)
-
-def load_products():
-    """Loads products from a JSON file."""
-    if os.path.exists(PRODUCTS_FILE):
-        with open(PRODUCTS_FILE, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            return [
-                Product(
-                    p["product_id"], 
-                    p.get("name", "Unknown Product"), 
-                    [Opinion(
-                        opinion_id=r["opinion_id"],
-                        author=r["author"],
-                        recommendation=r["recommendation"],
-                        score=r["score"],
-                        content=r["content"],
-                        pros=r["pros"],  
-                        cons=r["cons"],  
-                        helpful=r["helpful"],
-                        unhelpful=r["unhelpful"],
-                        publish_date=r["publish_date"],
-                        purchase_date=r["purchase_date"]
-                    ) for r in p["reviews"]]
-                ) for p in data
-            ]
-    return []
-
-products = load_products()
-
-
-@app.route("/")
-def home():
-    return render_template("index.html")
-
-@app.route("/products")
-def product_list():
-    return render_template("products.html", products=products)
-
-@app.route("/extract", methods=["GET", "POST"])
-def extract():
-    if request.method == "POST":
-        product_id = request.form.get("product_id")
-        if not product_id:
-            flash("Please enter a valid product ID.", "danger")
-            return redirect(url_for("extract"))
-        return redirect(url_for("product_page", product_id=product_id))
-    return render_template("extract.html")
-
-@app.route("/product/<product_id>")
-def product_page(product_id):
-    product = next((p for p in products if p.product_id == product_id), None)
-    if not product:
-        product = Product(product_id)
-        product.fetch_reviews()
-        products.append(product)
-        save_products()
-    return render_template("product.html", product=product)
-
-@app.route("/about")
-def about():
-    return render_template("about.html")
-
-
-if __name__ == "__main__":
-    app.run(debug=True)
