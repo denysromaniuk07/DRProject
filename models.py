@@ -31,6 +31,8 @@ class Product:
         return len(self.reviews)
 
     def fetch_reviews(self):
+        if not self.reviews:
+            raise ValueError("No reviews found or invalid product ID.")
         from utils import save_products
         from routes import products
         base_url = f"https://www.ceneo.pl/{self.product_id}"

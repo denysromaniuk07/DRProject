@@ -11,7 +11,6 @@ app = Flask(__name__)
 
 @app.route("/product/<product_id>/charts")
 def product_charts(product_id):
-    """Route to generate and display product charts."""
     product = next((p for p in products if p.product_id == product_id), None)
     if not product:
         return "Product not found", 404
@@ -92,6 +91,16 @@ def extract():
         if not product_id:
             flash("Please enter a valid product ID.", "danger")
             return redirect(url_for("extract"))
+        
+        product = Product(product_id)
+        try:
+            product.fetch_reviews()
+        except Exception as e:
+            flash(f"Failed to fetch reviews: {str(e)}", "danger")
+            return redirect(url_for("extract"))
+        
+        products.append(product)
+        save_products()
         return redirect(url_for("product_page", product_id=product_id))
     return render_template("extract.html")
 
@@ -99,10 +108,8 @@ def extract():
 def product_page(product_id):
     product = next((p for p in products if p.product_id == product_id), None)
     if not product:
-        product = Product(product_id)
-        product.fetch_reviews()
-        products.append(product)
-        save_products()
+        flash("Product not found. Please extract it first.", "warning")
+        return redirect(url_for("extract"))
     return render_template("product.html", product=product)
 
 @app.route("/about")
