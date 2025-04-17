@@ -4,6 +4,7 @@ import json
 import pandas as pd
 from flask import Flask, render_template, request, redirect, url_for, flash, send_file
 from models import Product, Opinion
+
 PRODUCTS_FILE = 'products.json'
 
 app = Flask(__name__)
@@ -21,7 +22,6 @@ def product_charts(product_id):
 
 @app.route("/download/<filetype>/<product_id>")
 def download_file(filetype, product_id):
-    """Downloads JSON, CSV, or XLSX file with product reviews."""
     product = next((p for p in products if p.product_id == product_id), None)
     if not product:
         return "Product not found", 404
@@ -42,7 +42,6 @@ def download_file(filetype, product_id):
 
 
 def save_products():
-    """Saves products to a JSON file."""
     with open(PRODUCTS_FILE, "w", encoding="utf-8") as f:
         json.dump([{
             "product_id": product.product_id,
@@ -51,7 +50,6 @@ def save_products():
         } for product in products], f, indent=4, ensure_ascii=False)
 
 def load_products():
-    """Loads products from a JSON file."""
     if os.path.exists(PRODUCTS_FILE):
         with open(PRODUCTS_FILE, "r", encoding="utf-8") as f:
             data = json.load(f)
@@ -90,6 +88,7 @@ def product_list():
 def extract():
     if request.method == "POST":
         product_id = request.form.get("product_id")
+        
         if not product_id:
             flash("Please enter a valid product ID.", "danger")
             return redirect(url_for("extract"))

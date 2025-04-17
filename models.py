@@ -3,7 +3,6 @@ from bs4 import BeautifulSoup
 
 
 class Opinion:
-    """Represents a single product review."""
     def __init__(self, opinion_id, author, recommendation, score, content, pros, cons, helpful, unhelpful, publish_date, purchase_date):
         self.opinion_id = opinion_id
         self.author = author
@@ -18,26 +17,22 @@ class Opinion:
         self.purchase_date = purchase_date
 
     def to_dict(self):
-        """Convert object to dictionary for JSON storage."""
         return self.__dict__
     
 
 
 class Product:
-    """Represents a product with its reviews."""
     def __init__(self, product_id, name=None, reviews=None):
         self.product_id = product_id
         self.name = name
         self.reviews = reviews if reviews else []
 
     def number_of_opinions(self):
-        """Returns the total number of opinions."""
         return len(self.reviews)
 
     def fetch_reviews(self):
         from utils import save_products
         from routes import products
-        """Fetches reviews from Ceneo.pl"""
         base_url = f"https://www.ceneo.pl/{self.product_id}"
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36"}
         response = requests.get(base_url + "#tab=reviews", headers=headers)
@@ -96,15 +91,12 @@ class Product:
         save_products(products)
 
     def advantages_count(self):
-        """Returns the number of reviews that mention advantages (pros)."""
         return sum(1 for review in self.reviews if review.pros and review.pros != "None")
 
     def disadvantages_count(self):
-        """Returns the number of reviews that mention disadvantages (cons)."""
         return sum(1 for review in self.reviews if review.cons and review.cons != "None")
 
     def average_score(self):
-        """Returns the average score of the product or 0 if no reviews."""
         if not self.reviews:
             return 0
         return round(sum(review.score for review in self.reviews) / len(self.reviews), 1)

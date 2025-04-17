@@ -6,7 +6,6 @@ from models import Product, Opinion
 PRODUCTS_FILE = "products.json"
 
 def save_products(products):
-    """Saves products to a JSON file."""
     with open(PRODUCTS_FILE, "w", encoding="utf-8") as f:
         json.dump([
             {
@@ -17,7 +16,6 @@ def save_products(products):
         ], f, indent=4, ensure_ascii=False)
 
 def load_products():
-    """Loads products from a JSON file."""
     
     if os.path.exists(PRODUCTS_FILE):
         with open(PRODUCTS_FILE, "r", encoding="utf-8") as f:
@@ -44,7 +42,6 @@ def load_products():
     return []
 
 def generate_charts(product):
-    """Generates pie and bar charts for product reviews."""
     if not os.path.exists("static"):
         os.makedirs("static")
 
